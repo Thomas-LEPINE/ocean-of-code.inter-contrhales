@@ -39,20 +39,30 @@ class Game:
 		# Vérification si coordonnées dans les limites et si jamais passé dessus ou île
 		return x >= 0 and x <= 14 and y >= 0 and y <= 14 and self.matrix[y][x] == 0
 
+	def euclidean_ditance(self, x, y):
+		euclidean_ditance = int(math.sqrt((y-self.my_position_y)**2 + (x-self.my_position_x)**2))
+		return euclidean_ditance
+
 	def manhattan_distance(self, x, y):
-		return int(math.sqrt((y-self.my_position_y)**2 + (x-self.my_position_x)**2))
+		manhattan_distance = 0
+		for p_i,q_i in zip([self.my_position_x, self.my_position_y], [x, y]):
+			manhattan_distance += abs(p_i - q_i)
+		return manhattan_distance
 
 	def list_torpedable(self):
 		list_torpedables = []
 		for x in range(max(self.my_position_x - 4, 0), min(self.my_position_x + 4, 14)):
 			for y in range(max(self.my_position_y - 4, 0), min(self.my_position_y + 4, 14)):
 				# On vérifie que ce n'est pas une ile et que c'est à une distance de manhattan max 4 et min 2 (évite de s'auto bombarder)
-				if self.matrix[y][x] != 2 and self.manhattan_distance(x, y) >= 2 and self.manhattan_distance(x, y) <= 4:
+				if self.matrix[y][x] != 2 and self.euclidean_ditance(x, y) >= 2 and self.manhattan_distance(x, y) <= 4:
 					list_torpedables.append([x, y])
 		return list_torpedables
 
 	def torpedo(self):
 		shoot_position = random.choice(self.list_torpedable())
+		print("postion: [" + str(self.my_position_x) + ", " + str(self.my_position_y) + "]", file=sys.stderr, flush=True)
+		print("euclidean_ditance: " + str(self.euclidean_ditance(shoot_position[0],  shoot_position[1])), file=sys.stderr, flush=True)
+		print("manhattan_distance: " + str(self.manhattan_distance(shoot_position[0],  shoot_position[1])), file=sys.stderr, flush=True)
 		print("TORPEDO", shoot_position[0], shoot_position[1])
 
 	def move(self, way):
@@ -118,7 +128,6 @@ while True:
 
 # BUGS :
 #  Est déjà revenu sur la case précédente (délai pour intégrer dans la matrice le "1" ?)
-#  Fait 2 fois surface d'affilé ...
 #  S'est placé sur une êle ... while à vérifier (prendre dans le tableau)
 #  Chemin de torpille ne doit pas passer par une île
 #  Concatener les messages pour faire plus d'action --> RIEN dans les méthodes !
