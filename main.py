@@ -51,8 +51,8 @@ class Game:
 
 	def list_torpedable(self):
 		list_torpedables = []
-		for x in range(max(self.my_position_x - 4, 0), min(self.my_position_x + 4, 14)):
-			for y in range(max(self.my_position_y - 4, 0), min(self.my_position_y + 4, 14)):
+		for x in range(max(self.my_position_x - 4, 0), min(self.my_position_x + 4, len(matrix))):
+			for y in range(max(self.my_position_y - 4, 0), min(self.my_position_y + 4, len(matrix))):
 				# On vérifie que ce n'est pas une ile et que c'est à une distance de manhattan max 4 et min 2 (évite de s'auto bombarder)
 				if self.matrix[y][x] != 2 and self.euclidean_ditance(x, y) >= 2 and self.manhattan_distance(x, y) <= 4:
 					list_torpedables.append([x, y])
@@ -77,9 +77,9 @@ class Game:
 
 	def surface(self):
 		# On vide les cases visitées (surface => réinitialisation du chemin)
-		for x in range(0, 14):
-			for y in range(0, 14):
-				if self.matrix[x][y] == 1:
+		for x in range(0, len(matrix)):
+			for y in range(0, len(matrix)):
+				if self.matrix[y][x] == 1:
 					self.update_matrix_point(x, y, 0)
 		self.matrix[self.my_position_y][self.my_position_x] = 1 # On remet "1" dans la case où l'on se trouve
 		print("SURFACE")
@@ -96,7 +96,7 @@ for i in range(height):
 game = Game(matrix)
 print(game.my_position_x, game.my_position_y)
 
-# game loop
+# GAME LOOP
 while True:
 	x, y, my_life, opp_life, torpedo_cooldown, sonar_cooldown, silence_cooldown, mine_cooldown = [int(i) for i in input().split()]
 	
@@ -122,6 +122,9 @@ while True:
 			direction = random.choice(cardinality)
 		if cardinality:
 			game.move(direction)
+	print('matrix: \n', file=sys.stderr, flush=True)
+	for i in range(0, len(matrix)):
+		print(str(matrix[i]) + '\n', file=sys.stderr, flush=True)
 
 # BUGS :
 #  Est déjà revenu sur la case précédente (délai pour intégrer dans la matrice le "1" ?)
