@@ -60,9 +60,6 @@ class Game:
 
 	def torpedo(self):
 		shoot_position = random.choice(self.list_torpedable())
-		print("postion: [" + str(self.my_position_x) + ", " + str(self.my_position_y) + "]", file=sys.stderr, flush=True)
-		print("euclidean_ditance: " + str(self.euclidean_ditance(shoot_position[0],  shoot_position[1])), file=sys.stderr, flush=True)
-		print("manhattan_distance: " + str(self.manhattan_distance(shoot_position[0],  shoot_position[1])), file=sys.stderr, flush=True)
 		print("TORPEDO", shoot_position[0], shoot_position[1])
 
 	def move(self, way):
