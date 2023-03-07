@@ -122,9 +122,6 @@ while True:
 			direction = random.choice(cardinality)
 		if cardinality:
 			game.move(direction)
-	print('matrix: \n', file=sys.stderr, flush=True)
-	for i in range(0, len(matrix)):
-		print(str(matrix[i]) + '\n', file=sys.stderr, flush=True)
 
 # BUGS :
 #  Est déjà revenu sur la case précédente (délai pour intégrer dans la matrice le "1" ?)
