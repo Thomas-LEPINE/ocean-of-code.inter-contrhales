@@ -17,14 +17,14 @@ class Game:
 			x = random.randint(0, 14)
 			y = random.randint(0, 14)
 		self.set_my_position(x, y)
-		self.update_matrix_point(y, x, 1)
+		self.update_matrix_point(x, y, 1)
 
 	def set_my_position(self, x, y):
 		self.my_position_x = x
 		self.my_position_y = y
 
 	def update_matrix_point(self, x, y, value):
-		self.matrix[x][y] = value
+		self.matrix[y][x] = value
 
 	def can_move(self, x, y, way='NA'):
 		if way == 'N':
