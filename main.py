@@ -60,7 +60,7 @@ class Game:
 
 	def torpedo(self):
 		shoot_position = random.choice(self.list_torpedable())
-		print("TORPEDO", shoot_position[0], shoot_position[1])
+		return 'TORPEDO ' + str(shoot_position[0]) + ' ' + str(shoot_position[1])
 
 	def move(self, way):
 		if way == 'N':
@@ -73,7 +73,7 @@ class Game:
 			self.set_my_position(self.my_position_x - 1, self.my_position_y)
 
 		self.matrix[self.my_position_y][self.my_position_x] = 1
-		print("MOVE", way, "TORPEDO")
+		return 'MOVE ' + str(way) + ' TORPEDO'
 
 	def surface(self):
 		# On vide les cases visitées (surface => réinitialisation du chemin)
@@ -82,7 +82,7 @@ class Game:
 				if self.matrix[y][x] == 1:
 					self.update_matrix_point(x, y, 0)
 		self.matrix[self.my_position_y][self.my_position_x] = 1 # On remet "1" dans la case où l'on se trouve
-		print("SURFACE")
+		return 'SURFACE'
 
 matrix = []
 
@@ -104,24 +104,25 @@ while True:
 	opponent_orders = input()
 	print("MY LIFE : " + str(my_life), file=sys.stderr, flush=True)
 	print("OPP LIFE : " + str(opp_life), file=sys.stderr, flush=True)
-
+	action = '' # The action to do each turn
 	cardinality = ['N','S','E','W']
 	game.life = my_life
 
 	game.set_my_position(x, y)
 	if torpedo_cooldown == 0:
-		game.torpedo()
-	else :
+		action += game.torpedo() + ' | '
+
+	direction = random.choice(cardinality)
+	while not game.can_move(game.my_position_x, game.my_position_y, direction):
+		cardinality.remove(direction)
+		# S'il n'y a plus de possibilité, on fait un surface
+		if not cardinality: 
+			action = game.surface()
+			break
 		direction = random.choice(cardinality)
-		while not game.can_move(game.my_position_x, game.my_position_y, direction):
-			cardinality.remove(direction)
-			# S'il n'y a plus de possibilité, on fait un surface
-			if not cardinality: 
-				game.surface()
-				break
-			direction = random.choice(cardinality)
-		if cardinality:
-			game.move(direction)
+	if cardinality:
+		action += game.move(direction)
+	print(action)
 
 # BUGS :
 #  Est déjà revenu sur la case précédente (délai pour intégrer dans la matrice le "1" ?)
