@@ -121,25 +121,25 @@ class Game:
 		for card in cardinality:
 			count = 0
 			if card == 'N':
-				j = self.my_position_y - 1
-				while j >= 0 and self.my_matrix[j][self.my_position_x] == 0:
-					count += 1
-					j -= 1
+				for i in range (15):
+					for j in range(0, self.my_position_y - 1):
+						if self.my_matrix[j][i] == 0:
+							count += 1
 			elif card == 'S':
-				j = self.my_position_y + 1
-				while j <= 14 and self.my_matrix[j][self.my_position_x] == 0:
-					count += 1
-					j += 1
+				for i in range (15):
+					for j in range(self.my_position_y + 1, 15):
+						if self.my_matrix[j][i] == 0:
+							count += 1
 			elif card == 'E':
-				i = self.my_position_x + 1
-				while i <= 14 and self.my_matrix[self.my_position_y][i] == 0:
-					count += 1
-					i += 1
+				for i in range (self.my_position_x + 1, 15):
+					for j in range(15):
+						if self.my_matrix[j][i] == 0:
+							count += 1
 			elif card == 'W':
-				i = self.my_position_x - 1
-				while i >= 0 and self.my_matrix[self.my_position_y][i] == 0:
-					count += 1
-					i -= 1
+				for i in range (0, self.my_position_x - 1):
+					for j in range(15):
+						if self.my_matrix[j][i] == 0:
+							count += 1
 			if count > max_count:
 				max_count = count
 				best_cardinality = card
@@ -248,8 +248,6 @@ while True:
 	cardinality = ['N','S','E','W']
 	game.set_my_position(x, y)
 
-	action = ''
-
 	# si on peut tirer
 	if torpedo_cooldown == 0:
 		possible_opp_positions = game.get_possible_opp_position()
@@ -258,7 +256,7 @@ while True:
 			action += "TORPEDO " + str(possible_opp_positions[0][0]) + " " + str(possible_opp_positions[0][1]) + " | "
 		else:
 			# sinon on tire aléatoirement dans toutes les possibilitiés
-			action += game.torpedo(possible_opp_positions) + ' | '
+			action += game.torpedo(possible_opp_positions) + " | "
 
 	# recherche de où on peut se déplacer
 	possible_cardinality = []
