@@ -15,18 +15,23 @@ def manhattan_distance(x1: int, y1: int, x2: int, y2: int) -> int:
         manhattan_distance += abs(p_i - q_i)
     return manhattan_distance
 
-def can_move(matrix: list, x: int, y: int, way: str = 'NA') -> bool:
+def can_move(matrix: list, x: int, y: int, way: str = 'NA', distance: int = 1) -> bool:
     if way == 'N':
-        y = y - 1
+        y = y - distance
     elif way == 'S':
-        y = y + 1
+        y = y + distance
     elif way == 'E':
-        x = x + 1
+        x = x + distance
     elif way == 'W':
-        x = x - 1
-
+        x = x - distance
     # Vérification si coordonnées dans les limites et si jamais passé dessus ou île
     return x >= 0 and x <= 14 and y >= 0 and y <= 14 and matrix[y][x] == 0
+
+def can_move_distance(matrix: list, x: int, y: int, way: str, distance: int = 1) -> bool:
+    for dist in range(1, distance + 1)[::-1]:
+        if not can_move(matrix, x, y, way, dist):
+            return False
+    return True
 
 def get_section(x: int, y: int) -> int:
     if x < 5 and y < 5 :
@@ -51,22 +56,24 @@ def get_section(x: int, y: int) -> int:
         return -1
 
 def opponent_orders_managing(opponent_orders: str) -> None:
-    if "MOVE" in opponent_orders:
-        game.opp_moves.append(opponent_orders.partition("MOVE")[2][1])
+    # print(str(opponent_orders), file=sys.stderr, flush=True)
+    if 'MOVE' in opponent_orders:
+        game.opp_moves.append(opponent_orders.partition('MOVE')[2][1])
 
     # Si l'opp fait SURFACE, on réduit les possibilités de sa position
-    if "SURFACE" in opponent_orders:
-        opp_section = opponent_orders.partition("SURFACE")[2][1]
+    if 'SURFACE' in opponent_orders:
+        opp_section = opponent_orders.partition('SURFACE')[2][1]
         for i in range(15):
             for j in range(15):
                 if game.opp_matrix[j][i] == 0 and get_section(i, j) != opp_section:
                     game.update_opp_matrix(i, j, 1)
     
     # Si l'opp fait SILENCE, on réinitialise la recherche de sa position
-    if "SILENCE" in opponent_orders and "SILENCE" not in opponent_orders.partition("MOVE")[2]:
+    if 'SILENCE' in opponent_orders and "SILENCE" not in opponent_orders.partition('MOVE')[2]:
         game.opp_moves = []
         game.reset_matrix(game.opp_matrix, False)
-        # game.opp_matrix = copy.deepcopy(matrix_opp)
+
+    # TODO : récupérer l'ordre s'il a tiré !
 
 class Game:
     def __init__(self, matrix):
@@ -86,7 +93,7 @@ class Game:
     def set_my_position(self, x: int, y: int) -> None:
         self.my_position_x = x
         self.my_position_y = y
-
+    
     def set_opp_position(self, x: int, y: int) -> None:
         self.opp_position_x = x
         self.opp_position_x = y
@@ -96,7 +103,7 @@ class Game:
     
     def update_opp_matrix(self, x: int, y: int, value: int) -> None:
         self.opp_matrix[y][x] = value
-
+    
     def list_torpedable(self) -> list:
         list_torpedable = []
         for x in range(max(self.my_position_x - 4, 0), min(self.my_position_x + 4, 15)):
@@ -106,16 +113,20 @@ class Game:
                     list_torpedable.append([x, y])
         return list_torpedable
 
-    def torpedo(self, list_possible_opp_position: list) -> str:
-        # On récupère la liste d'où on peut tirer
-        list_torpedable = self.list_torpedable()
-
+    def list_torpedable_opp(self, list_possible_opp_position: list, list_torpedable: list = []) -> list:
         list_shoot = []
+        if len(list_torpedable) == 0:
+            list_torpedable = self.list_torpedable()
         # On recherche les torpedo qui sont dans les positions possibles de l'opp
         for torpedo in list_torpedable:
             if torpedo in list_possible_opp_position:
                 list_shoot.append(torpedo)
-        
+        return list_shoot
+
+    # On récupère la liste d'où on peut tirer
+    def torpedo(self, list_possible_opp_position: list) -> str:
+        list_torpedable = self.list_torpedable()
+        list_shoot = self.list_torpedable_opp(list_torpedable, list_possible_opp_position)
         shoot_position = ''
         if list_shoot: # S'il y a des possibilités, on shoot aléatoirement dans ces possibilites
             shoot_position = random.choice(list_shoot)
@@ -140,17 +151,30 @@ class Game:
         self.update_my_matrix(self.my_position_x, self.my_position_y, 1)
         return 'MOVE ' + str(way) + ' ' + str(type_charge)
 
+    def silence(self, way: str, distance: int = 1) -> str:
+        for dist in range(1, distance + 1):
+            if way == 'N':
+                self.set_my_position(self.my_position_x, self.my_position_y - 1)
+            elif way == 'S':
+                self.set_my_position(self.my_position_x, self.my_position_y + 1)
+            elif way == 'E':
+                self.set_my_position(self.my_position_x + 1, self.my_position_y)
+            elif way == 'W':
+                self.set_my_position(self.my_position_x - 1, self.my_position_y)
+            self.update_my_matrix(self.my_position_x, self.my_position_y, 1)
+        return 'SILENCE ' + way + ' ' + str(distance)
+    
     def surface(self) -> str:
         self.reset_matrix(self.my_matrix, True)
         self.update_my_matrix(self.my_position_x, self.my_position_y, 1) # On remet "1" dans la case où l'on se trouve
         return 'SURFACE'
     
-    def reset_matrix(self, matrix: list, mine: bool) -> None:
+    def reset_matrix(self, matrix: list, is_my_matrix: bool) -> None:
         # On vide les cases visitées (surface => réinitialisation du chemin)
         for x in range(len(matrix)):
             for y in range(len(matrix)):
                 if matrix[y][x] == 1:
-                    if mine:
+                    if is_my_matrix:
                         self.update_my_matrix(x, y, 0)
                     else:
                         self.update_opp_matrix(x, y, 0)
@@ -184,21 +208,8 @@ class Game:
             if count > max_count:
                 max_count = count
                 best_cardinality = card
-
         return best_cardinality
     
-    def silence(self, way: str, dist: int) -> str:
-        if way == 'N':
-            self.set_my_position(self.my_position_x, self.my_position_y - dist)
-        elif way == 'S':
-            self.set_my_position(self.my_position_x, self.my_position_y + dist)
-        elif way == 'E':
-            self.set_my_position(self.my_position_x + dist, self.my_position_y)
-        elif way == 'W':
-            self.set_my_position(self.my_position_x - dist, self.my_position_y)
-
-        return 'SILENCE ' + way + ' ' + str(dist)
-
     # On simule le parcours de l'opp pour chaque case et on retourne les cases possibles
     def get_possible_opp_position(self) -> list:
         possibilities = []
@@ -223,7 +234,7 @@ class Game:
                             not_possible.append([x, y])
                     if can_move(self.opp_matrix, x, y):
                         possibilities.append([x, y])
-        print('possibilities opp (' + str(len(possibilities)) + '):\n' + str(possibilities), file=sys.stderr, flush=True)
+        print('Possibilities opp (' + str(len(possibilities)) + '):\n' + str(possibilities), file=sys.stderr, flush=True)
         return possibilities
 
 width, height, my_id = [int(i) for i in input().split()]
@@ -240,52 +251,77 @@ print(game.my_position_x, game.my_position_y) # Setup la position de départ
 
 my_old_life = 6
 type_charge = 'TORPEDO'
+must_silence = False
+nb_rounds = 1
+silence_max_dist = 2
+previous_position = [game.my_position_x, game.my_position_y]
 
 # GAME LOOP
 while True:
     x, y, my_life, opp_life, torpedo_cooldown, sonar_cooldown, silence_cooldown, mine_cooldown = [int(i) for i in input().split()]
-    
     sonar_result = input()
     opponent_orders = input()
 
     opponent_orders_managing(opponent_orders)
-    
-    print("MY LIFE: " + str(my_life), file=sys.stderr, flush=True)
-    print("MY OLD LIFE: " + str(my_old_life), file=sys.stderr, flush=True)
-    print("OPP LIFE: " + str(opp_life), file=sys.stderr, flush=True)
+
     action = '' # The action to do each turn
     cardinality = ['N','S','E','W']
+    
+    # On a fait une faute de jeu, on réinitialise la matrice
+    if x != game.my_position_x or y != game.my_position_y:
+        game.reset_matrix(game.my_matrix, True)
     game.set_my_position(x, y)
+    
+    if my_old_life - 2 >= my_life:
+        must_silence = True # On s'est fait tirer dessus (théoriquement)
+    
+    possible_opp_positions = game.get_possible_opp_position()
 
     # Si on peut tirer, on tire
     if torpedo_cooldown == 0:
-        possible_opp_positions = game.get_possible_opp_position()
-        if len(possible_opp_positions) == 1: # Si on a trouvé l'adversaire
-            action += game.shoot_torpedo(possible_opp_positions[0][0], possible_opp_positions[0][1]) + " | "
-        else:
-            # Sinon on tire aléatoirement dans toutes les possibilitiés
-            action += game.torpedo(possible_opp_positions) + " | "
+        action += game.torpedo(possible_opp_positions) + ' | '
     else:
-        type_charge = 'TORPEDO'
+        print('list_torpedable_opp: ' + str(len(game.list_torpedable_opp(possible_opp_positions))), file=sys.stderr, flush=True)
+        if (silence_cooldown != 0 and len(game.list_torpedable_opp(possible_opp_positions)) >= 12) or nb_rounds <= 6:
+            type_charge = 'SILENCE' # On priviligie le silence si le random est peut fructueux
+        else:
+            type_charge = 'TORPEDO'
 
-    # Recherche de où on peut se déplacer
+    # Recherche vers où on peut se déplacer
     possible_cardinality = []
     for card in cardinality:
         if can_move(game.my_matrix, game.my_position_x, game.my_position_y, card):
             possible_cardinality.append(card)
-
+    
     # Si on peut se déplacer, on va dans la meilleure direction
     if possible_cardinality:
         direction = game.best_direction(possible_cardinality)
-        action += game.move(direction, type_charge)
-    # Sinon on fait surface
-    else:
+        if must_silence and silence_cooldown == 0:
+            for distance in range(1, silence_max_dist + 1)[::-1]:
+                print('Distance: ' + str(distance), file=sys.stderr, flush=True)
+                print('can_move_distance: ' + str(can_move_distance(game.my_matrix, game.my_position_x, game.my_position_y, direction, distance)), file=sys.stderr, flush=True)
+                if can_move_distance(game.my_matrix, game.my_position_x, game.my_position_y, direction, distance):
+                    action += game.silence(direction, distance)
+                    break
+            must_silence = False
+        else:
+            action += game.move(direction, type_charge)
+    else: # Sinon on fait surface
+        if  ' | ' in action:
+            action.strip(' | ')
         action += game.surface()
-    
-    print(action)
+
     my_old_life = my_life
+    nb_rounds += 1
+    print('\nAction: ' + action, file=sys.stderr, flush=True)
+    print(action)
 
 # BUG :
-#  Est déjà revenu sur la case précédente (délai pour intégrer dans la matrice le "1" ?)
-#  S'est placé sur une êle ... while à vérifier (prendre dans le tableau)
 #  Chemin de torpille ne doit pas passer par une île
+#  PB dans la position de l'enemi, une liste fini, mais pas la bonne solution dedans ...
+#  Placement sur la carte (vérifer que l'on peut bouger (pas dans une impasse)
+#  WTF : https://www.codingame.com/replay/702962964
+
+# TODO :
+#  Silence après un surface ?
+#  récupérer l'ordre s'il a tiré dans opponent_orders_managing()
