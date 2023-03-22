@@ -308,7 +308,7 @@ while True:
             action += game.move(direction, type_charge)
     else: # Sinon on fait surface
         if  ' | ' in action:
-            action.strip(' | ')
+            action.strip(' | ') # On ne fait pas surface si on a tiré
         action += game.surface()
 
     my_old_life = my_life
