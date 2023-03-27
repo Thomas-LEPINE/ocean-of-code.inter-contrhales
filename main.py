@@ -185,7 +185,8 @@ class Game:
             return cardinality[0]
         best_cardinality = cardinality[0]
         max_count = 0
-        negative_point = 2.5
+        negative_point = 1
+        negative_point_island = 4
         for card in cardinality:
             count = 0
             if card == 'N':
@@ -193,29 +194,41 @@ class Game:
                     for j in range(0, self.my_position_y + 1):
                         if self.my_matrix[j][i] == 0:
                             count += 1
-                        if i == self.my_position_y and self.my_matrix[j][i] != 0 and j >= self.my_position_y - 2:
-                            count -= negative_point
+                        if i == self.my_position_y and self.my_matrix[j][i] != 0 and j <= self.my_position_y - 2:
+                            if self.my_matrix[j][i] == 2:
+                                count -= negative_point_island
+                            else:
+                                count -= negative_point
             elif card == 'S':
                 for i in range(15):
                     for j in range(self.my_position_y, 15):
                         if self.my_matrix[j][i] == 0:
                             count += 1
-                        if i == self.my_position_y and self.my_matrix[j][i] != 0 and j >= self.my_position_y + 2:
-                            count -= negative_point
+                        if i == self.my_position_y and self.my_matrix[j][i] != 0 and j <= self.my_position_y + 2:
+                            if self.my_matrix[j][i] == 2:
+                                count -= negative_point_island
+                            else:
+                                count -= negative_point
             elif card == 'E':
                 for i in range(self.my_position_x, 15):
                     for j in range(15):
                         if self.my_matrix[j][i] == 0:
                             count += 1
-                        if j == self.my_position_y and self.my_matrix[j][i] != 0 and i >= self.my_position_x + 2:
-                            count -= negative_point
+                        if j == self.my_position_y and self.my_matrix[j][i] != 0 and i <= self.my_position_x + 2:
+                            if self.my_matrix[j][i] == 2:
+                                count -= negative_point_island
+                            else:
+                                count -= negative_point
             elif card == 'W':
                 for i in range(0, self.my_position_x + 1):
                     for j in range(15):
                         if self.my_matrix[j][i] == 0:
                             count += 1
-                        if j == self.my_position_y and self.my_matrix[j][i] != 0 and i >= self.my_position_y - 2:
-                            count -= negative_point
+                        if j == self.my_position_y and self.my_matrix[j][i] != 0 and i <= self.my_position_y - 2:
+                            if self.my_matrix[j][i] == 2:
+                                count -= negative_point_island
+                            else:
+                                count -= negative_point
             if count > max_count:
                 max_count = count
                 best_cardinality = card
@@ -287,14 +300,15 @@ while True:
         must_silence = True # On s'est fait tirer dessus (théoriquement)
     
     possible_opp_positions = game.get_possible_opp_position()
+    possible_opp_torpedable_position = game.list_torpedable_opp(possible_opp_positions)
 
-    print('list_torpedable_opp: ' + str(len(game.list_torpedable_opp(possible_opp_positions))), file=sys.stderr, flush=True)
+    print('list_torpedable_opp: ' + str(len(possible_opp_torpedable_position)), file=sys.stderr, flush=True)
 
     # Si on peut tirer, on tire
     if torpedo_cooldown == 0:
         action += game.torpedo(possible_opp_positions) + ' | '
     else:
-        if must_silence or (silence_cooldown != 0 and len(game.list_torpedable_opp(possible_opp_positions)) >= 12) or nb_rounds <= 6:
+        if (must_silence and len(possible_opp_torpedable_position) >= 4) or (silence_cooldown != 0 and len(possible_opp_torpedable_position) >= 12) or nb_rounds <= 6:
             type_charge = 'SILENCE' # On priviligie le silence si le random est peu fructueux
         else:
             type_charge = 'TORPEDO'
@@ -310,8 +324,6 @@ while True:
         direction = game.best_direction(possible_cardinality)
         if must_silence and silence_cooldown == 0:
             for distance in range(1, silence_max_dist + 1)[::-1]:
-                print('Distance: ' + str(distance), file=sys.stderr, flush=True)
-                print('can_move_distance: ' + str(can_move_distance(game.my_matrix, game.my_position_x, game.my_position_y, direction, distance)), file=sys.stderr, flush=True)
                 if can_move_distance(game.my_matrix, game.my_position_x, game.my_position_y, direction, distance):
                     action += game.silence(direction, distance)
                     break
