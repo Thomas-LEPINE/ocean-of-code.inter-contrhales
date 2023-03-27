@@ -181,30 +181,41 @@ class Game:
 
     # Retourne la direction où il y a le plus de cases libres
     def best_direction(self, cardinality: list) -> str:
-        best_cardinality: str = cardinality[0]
-        max_count: int = 0
+        if len(cardinality) == 1:
+            return cardinality[0]
+        best_cardinality = cardinality[0]
+        max_count = 0
+        negative_point = 2.5
         for card in cardinality:
             count = 0
             if card == 'N':
-                for i in range (15):
-                    for j in range(0, self.my_position_y - 1):
+                for i in range(15):
+                    for j in range(0, self.my_position_y + 1):
                         if self.my_matrix[j][i] == 0:
                             count += 1
+                        if i == self.my_position_y and self.my_matrix[j][i] != 0 and j >= self.my_position_y - 2:
+                            count -= negative_point
             elif card == 'S':
-                for i in range (15):
-                    for j in range(self.my_position_y + 1, 15):
+                for i in range(15):
+                    for j in range(self.my_position_y, 15):
                         if self.my_matrix[j][i] == 0:
                             count += 1
+                        if i == self.my_position_y and self.my_matrix[j][i] != 0 and j >= self.my_position_y + 2:
+                            count -= negative_point
             elif card == 'E':
-                for i in range (self.my_position_x + 1, 15):
+                for i in range(self.my_position_x, 15):
                     for j in range(15):
                         if self.my_matrix[j][i] == 0:
                             count += 1
+                        if j == self.my_position_y and self.my_matrix[j][i] != 0 and i >= self.my_position_x + 2:
+                            count -= negative_point
             elif card == 'W':
-                for i in range (0, self.my_position_x - 1):
+                for i in range(0, self.my_position_x + 1):
                     for j in range(15):
                         if self.my_matrix[j][i] == 0:
                             count += 1
+                        if j == self.my_position_y and self.my_matrix[j][i] != 0 and i >= self.my_position_y - 2:
+                            count -= negative_point
             if count > max_count:
                 max_count = count
                 best_cardinality = card
@@ -254,7 +265,6 @@ type_charge = 'TORPEDO'
 must_silence = False
 nb_rounds = 1
 silence_max_dist = 2
-previous_position = [game.my_position_x, game.my_position_y]
 
 # GAME LOOP
 while True:
@@ -265,25 +275,27 @@ while True:
     opponent_orders_managing(opponent_orders)
 
     action = '' # The action to do each turn
-    cardinality = ['N','S','E','W']
+    cardinality = ['N', 'E', 'S', 'W']
     
-    # On a fait une faute de jeu, on réinitialise la matrice
+    # On a fait une faute de jeu, on réinitialise la matrice car on a fait surface
     if x != game.my_position_x or y != game.my_position_y:
         game.reset_matrix(game.my_matrix, True)
-    game.set_my_position(x, y)
+        must_silence = True
+    game.set_my_position(x, y) # Update la position
     
     if my_old_life - 2 >= my_life:
         must_silence = True # On s'est fait tirer dessus (théoriquement)
     
     possible_opp_positions = game.get_possible_opp_position()
 
+    print('list_torpedable_opp: ' + str(len(game.list_torpedable_opp(possible_opp_positions))), file=sys.stderr, flush=True)
+
     # Si on peut tirer, on tire
     if torpedo_cooldown == 0:
         action += game.torpedo(possible_opp_positions) + ' | '
     else:
-        print('list_torpedable_opp: ' + str(len(game.list_torpedable_opp(possible_opp_positions))), file=sys.stderr, flush=True)
-        if (silence_cooldown != 0 and len(game.list_torpedable_opp(possible_opp_positions)) >= 12) or nb_rounds <= 6:
-            type_charge = 'SILENCE' # On priviligie le silence si le random est peut fructueux
+        if must_silence or (silence_cooldown != 0 and len(game.list_torpedable_opp(possible_opp_positions)) >= 12) or nb_rounds <= 6:
+            type_charge = 'SILENCE' # On priviligie le silence si le random est peu fructueux
         else:
             type_charge = 'TORPEDO'
 
@@ -310,6 +322,7 @@ while True:
         if  ' | ' in action:
             action.strip(' | ') # On ne fait pas surface si on a tiré
         action += game.surface()
+        must_silence = True
 
     my_old_life = my_life
     nb_rounds += 1
@@ -319,7 +332,7 @@ while True:
 # BUG :
 #  Chemin de torpille ne doit pas passer par une île
 #  PB dans la position de l'enemi, une liste fini, mais pas la bonne solution dedans ...
-#  Placement sur la carte (vérifer que l'on peut bouger (pas dans une impasse)
+#  Placement sur la carte (vérifer que l'on peut bouger (pas dans une impasse))
 #  WTF : https://www.codingame.com/replay/702962964
 
 # TODO :
