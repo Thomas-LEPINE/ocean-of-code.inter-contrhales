@@ -185,7 +185,7 @@ class Game:
             return cardinality[0]
         best_cardinality = cardinality[0]
         max_count = 0
-        negative_point = 1
+        negative_point = 2
         negative_point_island = 4
         for card in cardinality:
             count = 0
