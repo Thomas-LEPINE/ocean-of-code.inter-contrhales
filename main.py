@@ -181,6 +181,7 @@ class Game:
             return cardinality[0]
         best_cardinality = cardinality[0]
         max_count = 0
+        negative_point = 0.4
         negative_point_traj = 1
         negative_point_island = 3.2
         for card in cardinality:
@@ -190,6 +191,8 @@ class Game:
                     for j in range(0, self.my_position_y + 1):
                         if self.my_matrix[j][i] == 0:
                             count += 1
+                        if self.my_matrix[j][i] == 1:
+                            count -= negative_point
                         if i == self.my_position_y and self.my_matrix[j][i] != 0 and j <= self.my_position_y - 3:
                             if self.my_matrix[j][i] == 2:
                                 count -= negative_point_island
@@ -200,6 +203,8 @@ class Game:
                     for j in range(self.my_position_y, 15):
                         if self.my_matrix[j][i] == 0:
                             count += 1
+                        if self.my_matrix[j][i] == 1:
+                            count -= negative_point
                         if i == self.my_position_y and self.my_matrix[j][i] != 0 and j <= self.my_position_y + 3:
                             if self.my_matrix[j][i] == 2:
                                 count -= negative_point_island
@@ -210,6 +215,8 @@ class Game:
                     for j in range(15):
                         if self.my_matrix[j][i] == 0:
                             count += 1
+                        if self.my_matrix[j][i] == 1:
+                            count -= negative_point
                         if j == self.my_position_y and self.my_matrix[j][i] != 0 and i <= self.my_position_x + 3:
                             if self.my_matrix[j][i] == 2:
                                 count -= negative_point_island
@@ -220,6 +227,8 @@ class Game:
                     for j in range(15):
                         if self.my_matrix[j][i] == 0:
                             count += 1
+                        if self.my_matrix[j][i] == 1:
+                            count -= negative_point
                         if j == self.my_position_y and self.my_matrix[j][i] != 0 and i <= self.my_position_y - 3:
                             if self.my_matrix[j][i] == 2:
                                 count -= negative_point_island
@@ -349,5 +358,5 @@ while True:
 #  WTF : https://www.codingame.com/replay/702962964
 
 # TODO :
-#  Silence après un surface ?
+#  Calcul du chemin le plus long
 #  récupérer l'ordre s'il a tiré dans opponent_orders_managing()
